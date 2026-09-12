@@ -9,5 +9,6 @@ wheels/
 # Virtual environments
 .venv
 
-# Config file
+# Config file and data directory
 config.yaml
+data/
