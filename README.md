@@ -12,12 +12,7 @@ into sub-devices mirroring the real alarm devices and sections.
 
 ## Architecture
 
-- `src/jablo2esphome/core.py` — a *hard fork* of the Home Assistant
-  `jablotron100` integration. All protocol logic is byte-for-byte identical to
-  upstream so fixes can be synced verbatim; the Home Assistant imports/coupling
-  were removed and replaced by a thin runtime seam (`self._rt`, see
-  `runtime.py`). There is a file-backed store (`storage.py`) instead of the
-  Home Assistant configuration entry store.
+- `src/jablo2esphome/core.py` — Includes all the protocol logic. Highly inspired by the Home Assistant custom [Jablotron 100](https://github.com/kukulich/home-assistant-jablotron100) integration by @kukulich (credits below).
 - `src/jablo2esphome/{entities,state_sync,mapping}.py` — translates the core's
   entity model onto the ESPHome native API (entity categories, device classes,
   alarm control panel commands, events, sub-devices).
@@ -44,7 +39,7 @@ jablo2esphome config.yaml
 ```sh
 cp config.example.yaml config.yaml
 # edit config.yaml; make sure serial_port points at the container path
-docker compose up -d --build
+docker compose up -d
 ```
 
 Pass the Jablotron USB adapter through (see `devices:` in
@@ -95,15 +90,8 @@ exist without it:
 
 - **[kukulich/home-assistant-jablotron100](https://github.com/kukulich/home-assistant-jablotron100)**
   — the original Home Assistant integration by Jaroslav Hanslík (@kukulich) and
-  contributors. The entire Jablotron protocol implementation in
-  `src/jablo2esphome/core.py` is a hard fork of it: reverse-engineering the
-  Jablotron 100 serial protocol, the device/section/PG packet formats, and the
-  packet captures behind the tests are their work, and are what make this
-  bridge possible.
+  contributors. This repository would not have existed without their hard work of reverse-engineering of the Jablotron 100 serial protocol.
 - **[cjber/aioesphomeserver](https://github.com/cjber/aioesphomeserver)** by
-  Pete Keen — the native API server that `src/aioesphomeserver/` is vendored
-  and pruned from.
+  Pete Keen, the native API server that `src/aioesphomeserver/` is vendored from.
 - **[esphome/aioesphomeapi](https://github.com/esphome/aioesphomeapi)** and
-  **[ESPHome](https://esphome.io)** by Otto Winter and the ESPHome project —
-  the native API protocol definitions, message types and reference client that
-  this bridge implements against.
+  **[ESPHome](https://esphome.io)** by Otto Winter and the ESPHome project. Includes the native API protocol definitions, message types and reference client that this bridge implements against.
