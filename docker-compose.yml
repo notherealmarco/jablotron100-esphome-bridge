@@ -1,6 +1,8 @@
 services:
   jablo2esphome:
-    build: .
+    image: ghcr.io/notherealmarco/jablotron100-esphome-bridge:latest
+    # Use this as a fallback if ghrc does not work for you
+    #image: git.marcorealacci.me/marcorealacci/jablotron100-esphome-bridge:latest
     container_name: jablo2esphome
     restart: unless-stopped
     # Pass the Jablotron USB adapter into the container. Create a stable udev
