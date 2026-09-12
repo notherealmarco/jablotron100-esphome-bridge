@@ -1,0 +1,27 @@
+[project]
+name = "jablo2esphome"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+authors = [
+    { name = "Marco Realacci", email = "marco@marcorealacci.me" }
+]
+requires-python = ">=3.12"
+dependencies = [
+    "aioesphomeapi>=46.4.1",
+    "pyyaml>=6.0",
+    "zeroconf>=0.151.3",
+]
+
+[project.scripts]
+jablo2esphome = "jablo2esphome:main"
+
+[build-system]
+requires = ["uv_build>=0.12.13,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+    "pytest-asyncio>=1.4.0",
+]

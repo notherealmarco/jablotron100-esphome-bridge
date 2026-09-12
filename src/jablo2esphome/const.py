@@ -1,0 +1,331 @@
+"""Jablotron protocol constants and neutral runtime vocabulary.
+
+Hard-forked from the Home Assistant integration of the same name. All
+protocol-level constants and enums are byte-for-byte identical to upstream so
+that protocol fixes can be synced verbatim. Home Assistant-specific vocabulary
+(STATE_ON/OFF equivalents, the alarm control panel state enum, shutdown event)
+is re-defined here with matching values instead of being imported from
+``homeassistant``.
+"""
+import logging
+from enum import Enum, IntEnum, IntFlag, StrEnum
+from typing import Final
+
+LOGGER: Final = logging.getLogger(__package__)
+
+DOMAIN: Final = "jablotron100"
+NAME: Final = "Jablotron"
+VERSION: Final = "0.1.0"
+
+HIDRAW_PATH: Final = "/sys/class/hidraw"
+
+EVENT_WRONG_CODE: Final = "{}_wrong_code".format(DOMAIN)
+
+CONF_UNIQUE_ID: Final = "unique_id"
+CONF_SERIAL_PORT: Final = "serial_port"
+CONF_NUMBER_OF_DEVICES: Final = "number_of_devices"
+CONF_NUMBER_OF_PG_OUTPUTS: Final = "number_of_pg_outputs"
+CONF_DEVICES: Final = "devices"
+CONF_REQUIRE_CODE_TO_ARM: Final = "require_code_to_arm"
+CONF_REQUIRE_CODE_TO_DISARM: Final = "require_code_to_disarm"
+CONF_PARTIALLY_ARMING_MODE: Final = "partially_arming_mode"
+CONF_ENABLE_DEBUGGING: Final = "enable_debugging"
+
+CONF_LOG_ALL_INCOMING_PACKETS: Final = "log_all_incoming_packets"
+CONF_LOG_ALL_OUTCOMING_PACKETS: Final = "log_all_outcoming_packets"
+CONF_LOG_SECTIONS_PACKETS: Final = "log_sections_packets"
+CONF_LOG_PG_OUTPUTS_PACKETS: Final = "log_pg_outputs_packets"
+CONF_LOG_DEVICES_PACKETS: Final = "log_devices_packets"
+
+AUTODETECT_SERIAL_PORT: Final = "auto"
+
+CONF_PASSWORD: Final = "password"
+
+DEFAULT_CONF_REQUIRE_CODE_TO_ARM: Final = False
+DEFAULT_CONF_REQUIRE_CODE_TO_DISARM: Final = True
+DEFAULT_CONF_ENABLE_DEBUGGING: Final = False
+
+
+class CentralUnitData(StrEnum):
+	BATTERY = "battery"
+	BUSES = "buses"
+	BATTERY_LEVEL = "battery_level"
+	LAN_IP = "lan_ip"
+
+
+class DeviceData(StrEnum):
+	BATTERY = "battery"
+	BATTERY_LEVEL = "battery_level"
+	CONNECTION = "connection"
+	SECTION = "section"
+	SIGNAL_STRENGTH = "signal_strength"
+
+
+class DeviceConnection(StrEnum):
+	WIRED = "wired"
+	WIRELESS = "wireless"
+
+
+class DeviceNumber(Enum):
+	CENTRAL_UNIT = 0
+	MOBILE_APPLICATION = 251
+	USB = 254
+
+
+# Device numbers in this range are reserved by the central unit for system /
+# control entities (mobile applications, F-Link, USB connection, ...). They are
+# never assigned to user-installed peripherals on any supported central unit
+# (JA-101K supports up to 50 devices, JA-103K up to 120, JA-107K up to 230),
+# so packets coming from such numbers are not bugs — just system traffic that
+# we may not have explicit handling for yet.
+SYSTEM_DEVICE_NUMBER_RESERVED_MIN: Final = 240
+
+
+class DeviceType(StrEnum):
+	CENTRAL_UNIT = "central_unit"
+	KEYPAD = "keypad"
+	KEYPAD_WITH_DOOR_OPENING_DETECTOR = "keypad_with_door_opening_detector"
+	SIREN_OUTDOOR = "outdoor_siren"
+	SIREN_INDOOR = "indoor_siren"
+	MOTION_DETECTOR = "motion_detector"
+	WINDOW_OPENING_DETECTOR = "window_opening_detector"
+	DOOR_OPENING_DETECTOR = "door_opening_detector"
+	GARAGE_DOOR_OPENING_DETECTOR = "garage_door_opening_detector"
+	GLASS_BREAK_DETECTOR = "glass_break_detector"
+	SMOKE_DETECTOR = "smoke_detector"
+	FLOOD_DETECTOR = "flood_detector"
+	GAS_DETECTOR = "gas_detector"
+	THERMOSTAT = "thermostat"
+	THERMOMETER = "thermometer"
+	LOCK = "lock"
+	TAMPER = "tamper"
+	BUTTON = "button"
+	KEY_FOB = "key_fob"
+	ELECTRICITY_METER_WITH_PULSE_OUTPUT = "electricity_meter_with_pulse_output"
+	RADIO_MODULE = "radio_module"
+	VALVE = "valve"
+	CUSTOM = "custom"
+	OTHER = "other"
+	EMPTY = "empty"
+
+	def get_name(self) -> str:
+		name = self._value_.replace("_", " ")
+		return name[0:1].upper() + name[1:]
+
+
+class EntityType(StrEnum):
+	ALARM_CONTROL_PANEL = "alarm_control_panel"
+	BATTERY_LEVEL = "battery_level"
+	BATTERY_PROBLEM = "battery_problem"
+	BATTERY_LOAD_VOLTAGE = "battery_load_voltage"
+	BATTERY_STANDBY_VOLTAGE = "battery_standby_voltage"
+	BUS_DEVICES_CURRENT = "bus_devices_current"
+	BUS_VOLTAGE = "bus_voltage"
+	DEVICE_STATE_MOTION = "device_state_motion"
+	DEVICE_STATE_WINDOW = "device_state_window"
+	DEVICE_STATE_DOOR = "device_state_door"
+	DEVICE_STATE_GARAGE_DOOR = "device_state_garage_door"
+	DEVICE_STATE_GLASS = "device_state_glass"
+	DEVICE_STATE_MOISTURE = "device_state_moisture"
+	DEVICE_STATE_GAS = "device_state_gas"
+	DEVICE_STATE_SMOKE = "device_state_smoke"
+	DEVICE_STATE_LOCK = "device_state_lock"
+	DEVICE_STATE_TAMPER = "device_state_tamper"
+	DEVICE_STATE_THERMOSTAT = "device_state_thermostat"
+	DEVICE_STATE_THERMOMETER = "device_state_thermometer"
+	DEVICE_STATE_INDOOR_SIREN_BUTTON = "device_state_indoor_siren_button"
+	DEVICE_STATE_BUTTON = "device_state_button"
+	DEVICE_STATE_VALVE = "device_state_valve"
+	DEVICE_STATE_CUSTOM = "device_state_custom"
+	EVENT_LOGIN = "event_login"
+	FIRE = "fire"
+	GSM_SIGNAL = "gsm_signal"
+	GSM_SIGNAL_STRENGTH = "gsm_signal_strength"
+	LAN_CONNECTION = "lan_connection"
+	LAN_IP = "lan_ip"
+	POWER_SUPPLY = "power_supple"
+	PROBLEM = "problem"
+	PULSES = "pulses"
+	PROGRAMMABLE_OUTPUT = "programmable_output"
+	SIGNAL_STRENGTH = "signal_strength"
+	TEMPERATURE = "temperature"
+
+
+class EventLoginType(StrEnum):
+	WRONG_CODE = "wrong_code"
+
+
+class PartiallyArmingMode(StrEnum):
+	NOT_SUPPORTED = "not_supported"
+	NIGHT_MODE = "night_mode"
+	HOME_MODE = "home_mode"
+
+
+CODE_MIN_LENGTH: Final = 4
+CODE_MAX_LENGTH: Final = 10
+
+STREAM_MAX_WORKERS: Final = 5
+STREAM_TIMEOUT: Final = 10
+STREAM_PACKET_SIZE: Final = 64
+# Initial delay (in seconds) before retrying to reopen the serial port stream
+# after an I/O error. Multiplied by the number of consecutive failures and
+# capped at STREAM_REOPEN_MAX_DELAY to back off when the device is gone.
+STREAM_REOPEN_DELAY: Final = 1
+STREAM_REOPEN_MAX_DELAY: Final = 30
+
+MAX_SECTIONS: Final = 15
+MAX_DEVICES: Final = 230
+MAX_PG_OUTPUTS: Final = 128
+
+PACKET_GET_SYSTEM_INFO: Final[bytes] = b"\x30"
+PACKET_SYSTEM_INFO: Final[bytes] = b"\x40"
+PACKET_SECTIONS_STATES: Final[bytes] = b"\x51"
+PACKET_DEVICE_STATE: Final[bytes] = b"\x55"
+PACKET_DEVICE_INFO: Final[bytes] = b"\x90"
+PACKET_DEVICES_STATES: Final[bytes] = b"\xd8"
+PACKET_PG_OUTPUTS_STATES: Final[bytes] = b"\x50"
+PACKET_COMMAND: Final[bytes] = b"\x52"
+PACKET_UI_CONTROL: Final[bytes] = b"\x80"
+PACKET_DIAGNOSTICS: Final[bytes] = b"\x94"
+PACKET_DIAGNOSTICS_COMMAND: Final[bytes] = b"\x96"
+PACKET_GET_DEVICES_SECTIONS: Final[bytes] = b"\x3a"
+PACKET_DEVICES_SECTIONS: Final[bytes] = b"\x3b"
+
+COMMAND_HEARTBEAT: Final[bytes] = b"\x02"
+COMMAND_GET_DEVICE_STATUS: Final[bytes] = b"\x0a"
+COMMAND_GET_SECTIONS_AND_PG_OUTPUTS_STATES: Final[bytes] = b"\x0e"
+COMMAND_ENABLE_DEVICE_STATE_PACKETS: Final[bytes] = b"\x13"
+
+COMMAND_RESPONSE_DEVICE_STATUS: Final[bytes] = b"\x8a"
+
+UI_CONTROL_AUTHORISATION_END: Final[bytes] = b"\x01"
+UI_CONTROL_AUTHORISATION_CODE: Final[bytes] = b"\x03"
+UI_CONTROL_MODIFY_SECTION: Final[bytes] = b"\x0d"
+UI_CONTROL_TOGGLE_PG_OUTPUT: Final[bytes] = b"\x23"
+
+DIAGNOSTICS_ON: Final[bytes] = b"\x01"
+DIAGNOSTICS_OFF: Final[bytes] = b"\x00"
+DIAGNOSTICS_COMMAND_GET_INFO: Final[bytes] = b"\x09"
+
+EMPTY_PACKET: Final[bytes] = b"\x00"
+
+# In minutes
+TIMEOUT_FOR_DEVICE_STATE_PACKETS: Final = 5
+
+
+class SystemInfo(Enum):
+	MODEL = 2
+	HARDWARE_VERSION = 8
+	FIRMWARE_VERSION = 9
+	REGISTRATION_CODE = 10
+	INSTALLATION_NAME = 11
+
+
+class SectionPrimaryState(Enum):
+	DISARMED = 1
+	ARMED_PARTIALLY = 2
+	ARMED_FULL = 3
+	MAINTENANCE = 4
+	SERVICE = 5
+	BLOCKED = 6
+	OFF = 7
+
+
+DEVICE_INFO_SUBPACKET_WIRELESS: Final[bytes] = b"\x01"
+DEVICE_INFO_SUBPACKET_PERIODIC: Final[bytes] = b"\x9c"
+DEVICE_INFO_SUBPACKET_REQUESTED: Final[bytes] = b"\x0a"
+DEVICE_INFO_KNOWN_SUBPACKETS: Final[tuple[bytes, ...]] = (
+	DEVICE_INFO_SUBPACKET_WIRELESS,
+	DEVICE_INFO_SUBPACKET_PERIODIC,
+	DEVICE_INFO_SUBPACKET_REQUESTED,
+)
+DEVICE_INFO_UNKNOWN_SUBPACKETS: Final[tuple[bytes, ...]] = (
+	b"\x05",
+)
+
+
+class DeviceInfoType(Enum):
+	SMOKE = 3
+	GSM = 4
+	LAN = 6
+	POWER = 10
+	POWER_PRECISE = 12
+	INPUT_VALUE = 14
+	INPUT_EXTENDED = 15
+	UNKNOWN_1 = 16
+	PULSE = 17
+	UNKNOWN_2 = 19
+	UNKNOWN_GSM = 21
+
+	def is_unknown(self) -> bool:
+		return self in (self.UNKNOWN_1, self.UNKNOWN_2, self.UNKNOWN_GSM)
+
+
+class DeviceFault(Enum):
+	BATTERY = 0
+	POWER_SUPPLY = 1
+	SABOTAGE = 2
+	UNKNOWN = 3
+
+
+class DeviceStateEvent(IntEnum):
+	INSTANT_ALARM = 0x00
+	DELAYED_ALARM_A = 0x01
+	DELAYED_ALARM_B = 0x02
+	DELAYED_ALARM_C = 0x03
+	ACTIVITY = 0x04
+	POWER_SUPPLY_FAULT = 0x05
+	SABOTAGE = 0x06
+	FAULT = 0x07
+	REPEATED_ALARM = 0x08
+	HEARTBEAT = 0x0F
+	BATTERY_FAULT = 0x14
+
+
+# The remaining upper flag bits are preserved by the mask below, but their
+# meaning has not been verified yet.
+class DeviceStateFlag(IntFlag):
+	NONE = 0
+	NO_REACTION_WHEN_PARTIALLY_ARMED = 0x80
+
+
+DEVICE_STATE_EVENT_MASK: Final = 0x1F
+DEVICE_STATE_FLAGS_MASK: Final = 0xE0
+
+
+BATTERY_LEVEL_NO_CHANGE_FROM_PREVIOUS_STATE: Final[bytes] = b"\x0b"
+BATTERY_LEVEL_EXTERNAL_POWER_SUPPLY: Final[bytes] = b"\x0c"
+BATTERY_LEVEL_MEASURING: Final[bytes] = b"\x0d"
+BATTERY_LEVEL_NO_MEASUREMENT: Final[bytes] = b"\x0e"
+BATTERY_LEVEL_NO_BATTERY: Final[bytes] = b"\x0f"
+BATTERY_LEVELS_TO_IGNORE: Final[tuple[bytes, ...]] = (
+	BATTERY_LEVEL_EXTERNAL_POWER_SUPPLY,
+	BATTERY_LEVEL_MEASURING,
+	BATTERY_LEVEL_NO_MEASUREMENT,
+)
+
+PG_OUTPUT_TURN_ON: Final[bytes] = b"\x01"
+PG_OUTPUT_TURN_OFF: Final[bytes] = b"\x00"
+
+SIGNAL_STRENGTH_STEP: Final = 5
+BATTERY_LEVEL_STEP: Final = 10
+
+
+# Binary "on"/"off" state values, matching the Home Assistant originals.
+STATE_ON: Final = "on"
+STATE_OFF: Final = "off"
+
+# Event fired on the runtime event bus when the process is shutting down.
+EVENT_SHUTDOWN: Final = "shutdown"
+
+
+class AlarmControlPanelState(StrEnum):
+	# Values match both the Home Assistant enum and the ESPHome protobuf enum.
+	DISARMED = "disarmed"
+	ARMED_HOME = "armed_home"
+	ARMED_AWAY = "armed_away"
+	ARMED_NIGHT = "armed_night"
+	PENDING = "pending"
+	ARMING = "arming"
+	DISARMING = "disarming"
+	TRIGGERED = "triggered"

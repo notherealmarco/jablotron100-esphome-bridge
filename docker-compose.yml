@@ -1,0 +1,20 @@
+services:
+  jablo2esphome:
+    build: .
+    container_name: jablo2esphome
+    restart: unless-stopped
+    # Pass the Jablotron USB adapter into the container. Create a stable udev
+    # symlink so the number does not matter:
+    #   /etc/udev/rules.d/99-jablotron.rules:
+    #     SUBSYSTEM=="hidraw", ATTRS{idVendor}=="16d6", ATTRS{idProduct}=="0008", SYMLINK+="jablotron", MODE="0660", GROUP="plugdev"
+    devices:
+      - "/dev/jablotron:/dev/jablotron"
+    ports:
+      - "6053:6053/tcp"
+      - "6053:6053/udp"
+    volumes:
+      - ./config.yaml:/app/config.yaml:ro
+      - jablo2esphome_data:/app/data
+
+volumes:
+  jablo2esphome_data:
