@@ -3,7 +3,9 @@ name: Build and deploy
 on:
   # This workflow is now triggered via workflow_dispatch from the code-check workflow
   workflow_dispatch:
-    # No inputs needed
+  push:
+    branches:
+      - main
 
 # Defines custom environment variables for the workflow
 env:
@@ -54,6 +56,3 @@ jobs:
           # Adding cache support to speed up builds
           # cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.USER }}/${{ env.IMAGE_NAME }}:cache
           # cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.USER }}/${{ env.IMAGE_NAME }}:cache,mode=max
-
-      - name: Call webhook
-        run: curl -X POST ${{secrets.DEPLOY_WEBHOOK}}
