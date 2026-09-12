@@ -6,6 +6,13 @@ on:
   push:
     branches:
       - main
+    paths:
+      - 'src/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+      - 'uv.lock'
+      - 'pytest.ini'
+      - 'Dockerfile'
 
 # Defines custom environment variables for the workflow
 env:
