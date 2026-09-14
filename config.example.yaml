@@ -42,7 +42,12 @@ number_of_pg_outputs: 0
 # Alarm panel behaviour (the bridge's "options").
 require_code_to_arm: false
 require_code_to_disarm: true
-partially_arming_mode: night_mode   # night_mode | home_mode | not_supported
+# Controls how the section's "partially armed" state is reported, and which
+# arming modes Home Assistant offers on the alarm panel entity:
+#   night_mode     -> Arm away + Arm night
+#   home_mode      -> Arm away + Arm home
+#   not_supported  -> Arm away only
+partially_arming_mode: night_mode
 enable_debugging: false
 log_all_incoming_packets: false
 log_all_outcoming_packets: false

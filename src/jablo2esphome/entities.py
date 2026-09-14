@@ -29,6 +29,7 @@ from .const import (
 	AlarmControlPanelState,
 	EntityType,
 	EventLoginType,
+	PartiallyArmingMode,
 	STATE_OFF,
 	STATE_ON,
 )
@@ -40,10 +41,27 @@ from .mapping import (
 	stable_sub_device_id,
 )
 
-# ESPHome protobuf values (see aioesphomeapi.api_pb2, api_version 46.x).
-# 1 | 2 | 4 == ARM_AWAY | ARM_HOME | ARM_NIGHT; partial arming is negotiated
-# by the user via config, the rest is timeless.
-ACP_SUPPORTED_FEATURES = 1 | 2 | 4
+# ESPHome AlarmControlPanelEntityFeature bits (aioesphomeapi): 1 == ARM_HOME,
+# 2 == ARM_AWAY, 4 == ARM_NIGHT.
+ACP_FEATURE_ARM_HOME = 1
+ACP_FEATURE_ARM_AWAY = 2
+ACP_FEATURE_ARM_NIGHT = 4
+
+
+def alarm_supported_features(partially_arming_mode: PartiallyArmingMode) -> int:
+	"""Advertise only the arming modes the panel is configured for.
+
+	Mirrors the upstream integration: the section's "partially armed" state maps
+	to either home or night depending on ``partially_arming_mode``, so exposing
+	both would offer a mode that does nothing different.
+	"""
+	if partially_arming_mode == PartiallyArmingMode.NOT_SUPPORTED:
+		return ACP_FEATURE_ARM_AWAY
+
+	if partially_arming_mode == PartiallyArmingMode.HOME_MODE:
+		return ACP_FEATURE_ARM_AWAY | ACP_FEATURE_ARM_HOME
+
+	return ACP_FEATURE_ARM_AWAY | ACP_FEATURE_ARM_NIGHT
 
 ALARM_STATE_TO_PROTO = {
 	AlarmControlPanelState.DISARMED.value: 0,
@@ -137,6 +155,9 @@ class AlarmPanelEntity(BasicEntity):
 	def is_code_required_for_disarm(self) -> bool:
 		return self.hub.is_code_required_for_disarm()
 
+	def supported_features(self) -> int:
+		return alarm_supported_features(self.hub.partially_arming_mode())
+
 	async def build_list_entities_response(self):
 		return ListEntitiesAlarmControlPanelResponse(
 			object_id=self.object_id,
@@ -144,7 +165,7 @@ class AlarmPanelEntity(BasicEntity):
 			key=self.key,
 			icon=self.icon,
 			entity_category=self.entity_category,
-			supported_features=ACP_SUPPORTED_FEATURES,
+			supported_features=self.supported_features(),
 			requires_code=self.is_code_required_for_arm() or self.is_code_required_for_disarm(),
 			requires_code_to_arm=self.is_code_required_for_arm(),
 			device_id=self.device_id,

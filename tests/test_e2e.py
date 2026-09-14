@@ -37,6 +37,7 @@ from jablo2esphome.const import (
 	AlarmControlPanelState,
 	EntityType,
 	EVENT_WRONG_CODE,
+	PartiallyArmingMode,
 	STATE_OFF,
 	STATE_ON,
 )
@@ -125,6 +126,9 @@ class FakeHub:
 
 	def is_code_required_for_disarm(self) -> bool:
 		return True
+
+	def partially_arming_mode(self) -> PartiallyArmingMode:
+		return PartiallyArmingMode.NIGHT_MODE
 
 	def snapshot(self):
 		return dict(self.jablotron.states), True, False
@@ -292,7 +296,8 @@ async def test_end_to_end_native_api(tmp_path):
 
 		acp = entities["section_1"]
 		assert acp.device_id != 0
-		assert acp.supported_features & (1 | 2 | 4)
+		# FakeHub defaults to night_mode: ARM_AWAY | ARM_NIGHT only.
+		assert acp.supported_features == (2 | 4)
 		sensor = entities["device_battery_level_sensor_5"]
 		assert sensor.device_id != 0
 		assert sensor.unit_of_measurement == "%"

@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 from typing import Any, Callable
 
-from .const import DOMAIN, LOGGER
+from .const import DOMAIN, LOGGER, PartiallyArmingMode
 from .core import AlarmControlPanelState, Jablotron
 
 
@@ -73,6 +73,9 @@ class Hub:
 
 	def is_code_required_for_disarm(self) -> bool:
 		return self.jablotron.is_code_required_for_disarm()
+
+	def partially_arming_mode(self) -> PartiallyArmingMode:
+		return self.jablotron.partially_arming_mode()
 
 	def modify_section_state(self, section: int, state: AlarmControlPanelState, code: str | None) -> None:
 		self.jablotron.modify_alarm_control_panel_section_state(section, state, code)
