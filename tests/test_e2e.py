@@ -460,3 +460,28 @@ async def test_zeroconf_txt_has_no_api_encryption_key(monkeypatch):
 
 	info = await device.build_device_info_response()
 	assert info.uses_password is False
+
+@pytest.mark.asyncio
+async def test_home_assistant_connect_flow(tmp_path):
+	"""The high-level client flow Home Assistant runs on every connect.
+
+	Regression: aioesphomeapi >= 45.9 (current Home Assistant) sends DeviceCapabilitiesRequest
+	for API >= 1.15; the server never answered and HA timed out after 10s.
+	Unknown message types must also be ignored rather than dropping the link.
+	"""
+	from aioesphomeapi import APIClient
+
+	server, server_task, _tree, _loop, port = await _spin_server(tmp_path)
+	client = APIClient("127.0.0.1", port, None)
+	try:
+		await asyncio.wait_for(client.connect(login=True), 5.0)
+		device_info = await asyncio.wait_for(client.device_info(), 5.0)
+		await asyncio.wait_for(client.device_capabilities_compat(device_info), 5.0)
+
+		# An unknown message type must be skipped, keeping the stream framed.
+		client._connection._frame_helper.write_packets([(60000, b"\x08\x01")], True)
+		await asyncio.wait_for(client.list_entities_services(), 5.0)
+	finally:
+		await client.disconnect()
+		await server.stop()
+		server_task.cancel()

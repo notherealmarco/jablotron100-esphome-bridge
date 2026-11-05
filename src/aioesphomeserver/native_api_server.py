@@ -7,6 +7,8 @@ import logging
 from aioesphomeapi.api_pb2 import (  # type: ignore
     AuthenticationRequest,
     AuthenticationResponse,
+    DeviceCapabilitiesRequest,
+    DeviceCapabilitiesResponse,
     DeviceInfoRequest,
     DisconnectRequest,
     DisconnectResponse,
@@ -31,6 +33,8 @@ from .basic_entity import BasicEntity
 PROTO_TO_MESSAGE_TYPE = {v: k for k, v in MESSAGE_TYPE_TO_PROTO.items()}
 
 logger = logging.getLogger(__name__)
+
+_UNKNOWN_MESSAGE = object()
 
 def _varuint_to_bytes(value: int) -> bytes:
     """Convert a varuint to bytes."""
@@ -95,12 +99,17 @@ class NativeApiConnection:
             msg = await self.read_next_message()
 
             if msg is None:
-                # Unknown message type, or the peer hit EOF (read_next_message
-                # returns None). Returning here would send the caller's
-                # `while self.running` loop straight back into read_next_message,
-                # which at EOF returns synchronously with no yielding await point,
-                # starving the event loop for every other client.
+                # The peer hit EOF (read_next_message returns None). Returning
+                # here would send the caller's `while self.running` loop straight
+                # back into read_next_message, which at EOF returns synchronously
+                # with no yielding await point, starving the event loop for every
+                # other client.
                 raise ConnectionResetError
+
+            if msg is _UNKNOWN_MESSAGE:
+                # Like real ESPHome firmware, silently ignore message types we
+                # don't know: Home Assistant probes optional features this way.
+                return
 
             await self.server.log(f"{type(msg)}: {msg}")
 
@@ -168,13 +177,19 @@ class NativeApiConnection:
         preamble = await self._read_varuint()
         length = await self._read_varuint()
         message_type = await self._read_varuint()
+        if preamble < 0 or length < 0 or message_type < 0:
+            return None
+
+        # Always consume the payload so the stream stays framed, even for
+        # message types we are going to ignore.
+        msg_bytes = await self.reader.readexactly(length)
 
         klass = MESSAGE_TYPE_TO_PROTO.get(message_type)
         if klass is None:
-            return None
+            logger.debug("Ignoring unknown message type %s", message_type)
+            return _UNKNOWN_MESSAGE
 
         msg = klass()
-        msg_bytes = await self.reader.read(length)
 
         msg.MergeFromString(msg_bytes)
 
@@ -280,6 +295,11 @@ class NativeApiServer(BasicEntity):
             await self.handle_list_entities(client, message)
         elif type(message) == DeviceInfoRequest:
             await self.handle_device_info(client)
+        elif type(message) == DeviceCapabilitiesRequest:
+            # Requested on every connect by aioesphomeapi >= 45.9 (current
+            # Home Assistant) for API >= 1.15. We have no Bluetooth/voice/
+            # Z-Wave/serial proxy features, so the response is empty.
+            await client.write_message(DeviceCapabilitiesResponse())
         else:
             await self.device.publish(self, 'client_request', message)
 
